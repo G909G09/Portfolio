@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCHT — Architecture Portfolio</title>
+<style>
+  :root{
+    --bg:#0c0c0c;
+    --bg-alt:#141414;
+    --fg:#f3f3f0;
+    --muted:#8a8a85;
+    --line:rgba(255,255,255,.12);
+    --accent:#c9a86a;
+    --card:#1a1a1a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--fg);
+    font-family:'Helvetica Neue',Arial,'Noto Sans KR',sans-serif;
+    font-weight:300;
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none;}
+  ul{list-style:none;}
+  img{max-width:100%;display:block;}
+
+  /* ---------- Header ---------- */
+  header{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:24px 5vw;
+    mix-blend-mode:difference;
+  }
+  .logo{
+    font-size:18px;letter-spacing:4px;font-weight:600;
+  }
+  .logo span{color:var(--accent);}
+  nav ul{display:flex;gap:36px;}
+  nav a{
+    font-size:12px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--fg);opacity:.8;transition:opacity .25s;
+  }
+  nav a:hover{opacity:1;}
+  .lang-toggle{
+    display:flex;align-items:center;gap:8px;margin-left:36px;
+    font-size:11px;letter-spacing:1px;
+  }
+  .lang-toggle button{
+    background:none;border:1px solid var(--line);color:var(--muted);
+    padding:5px 10px;font-size:11px;letter-spacing:1px;cursor:pointer;
+    transition:all .25s;
+  }
+  .lang-toggle button.active{color:var(--bg);background:var(--fg);border-color:var(--fg);}
+  .nav-inner{display:flex;align-items:center;}
+  .menu-btn{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;}
+  .menu-btn span{width:24px;height:1px;background:var(--fg);}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    height:100vh;min-height:640px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;position:relative;
+    background:
+      radial-gradient(ellipse at 50% 20%, rgba(201,168,106,.10), transparent 60%),
+      linear-gradient(180deg,#050505 0%, #0c0c0c 60%, #111 100%);
+  }
+  .hero-eyebrow{
+    font-size:12px;letter-spacing:6px;color:var(--muted);text-transform:uppercase;margin-bottom:22px;
+  }
+  .hero h1{
+    font-size:clamp(48px,9vw,120px);
+    font-weight:700;letter-spacing:2px;line-height:0.95;
+    text-transform:uppercase;
+  }
+  .hero h1 em{font-style:normal;color:var(--accent);}
+  .hero p{
+    margin-top:26px;max-width:560px;color:var(--muted);font-size:15px;letter-spacing:.3px;
+  }
+  .hero .scroll-cue{
+    position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+    width:26px;height:42px;border:1px solid var(--line);border-radius:20px;
+  }
+  .hero .scroll-cue::before{
+    content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);
+    width:3px;height:8px;background:var(--fg);border-radius:2px;
+    animation:sc 1.8s infinite;
+  }
+  @keyframes sc{0%{opacity:1;top:8px;}100%{opacity:0;top:22px;}}
+
+  /* ---------- Section shell ---------- */
+  section{padding:130px 5vw;}
+  .section-head{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    margin-bottom:56px;flex-wrap:wrap;gap:24px;
+    border-bottom:1px solid var(--line);padding-bottom:28px;
+  }
+  .section-head h2{
+    font-size:clamp(30px,4vw,52px);font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  }
+  .section-head .sub{color:var(--muted);font-size:14px;max-width:420px;}
+
+  /* ---------- Filters ---------- */
+  .filters{
+    display:flex;flex-wrap:wrap;gap:10px 28px;margin-bottom:48px;
+  }
+  .filters button{
+    background:none;border:none;color:var(--muted);
+    font-size:12px;letter-spacing:2px;text-transform:uppercase;
+    padding:6px 0;cursor:pointer;position:relative;
+  }
+  .filters button::after{
+    content:'';position:absolute;left:0;bottom:0;width:0;height:1px;background:var(--fg);
+    transition:width .25s;
+  }
+  .filters button.active{color:var(--fg);}
+  .filters button.active::after{width:100%;}
+
+  /* ---------- Project grid ---------- */
+  .grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:28px;
+  }
+  .card{
+    position:relative;overflow:hidden;aspect-ratio:4/5;cursor:pointer;
+    background:var(--card);border:1px solid var(--line);
+  }
+  .card .thumb{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .6s cubic-bezier(.2,.8,.2,1);
+  }
+  .card .thumb span{
+    font-size:15vw;font-weight:800;color:rgba(255,255,255,.16);
+    letter-spacing:2px;
+  }
+  .card:hover .thumb{transform:scale(1.08);}
+  .card .overlay{
+    position:absolute;inset:0;padding:26px;
+    display:flex;flex-direction:column;justify-content:flex-end;
+    background:linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.88) 100%);
+  }
+  .card .tag{
+    font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:8px;
+  }
+  .card .title{font-size:19px;font-weight:600;letter-spacing:.3px;margin-bottom:6px;}
+  .card .meta{font-size:12px;color:var(--muted);}
+  .card .desc{
+    font-size:13px;color:var(--muted);margin-top:10px;max-height:0;overflow:hidden;
+    transition:max-height .35s ease;
+  }
+  .card:hover .desc{max-height:80px;}
+  .card.hide{display:none;}
+
+  /* ---------- About ---------- */
+  .about{background:var(--bg-alt);}
+  .about-wrap{
+    display:grid;grid-template-columns:.8fr 1.2fr;gap:64px;align-items:start;
+  }
+  .about-photo{
+    aspect-ratio:3/4;background:
+      linear-gradient(160deg,#232323,#101010);
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);
+  }
+  .about-photo span{font-size:13px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+  .about-text h3{font-size:26px;margin-bottom:18px;font-weight:600;}
+  .about-text p{color:var(--muted);margin-bottom:16px;max-width:620px;font-size:15px;}
+  .about-list{
+    margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:28px;
+  }
+  .about-list h4{
+    font-size:11px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:12px;
+  }
+  .about-list li{
+    font-size:13.5px;color:var(--muted);padding:6px 0;border-bottom:1px solid var(--line);
+    display:flex;justify-content:space-between;gap:12px;
+  }
+
+  /* ---------- Contact ---------- */
+  .contact{text-align:center;}
+  .contact h2{font-size:clamp(30px,4vw,52px);text-transform:uppercase;font-weight:700;margin-bottom:20px;}
+  .contact p{color:var(--muted);margin-bottom:36px;}
+  .contact-links{display:flex;justify-content:center;gap:34px;flex-wrap:wrap;}
+  .contact-links a{
+    font-size:13px;letter-spacing:1.5px;text-transform:uppercase;
+    border-bottom:1px solid var(--line);padding-bottom:4px;transition:border-color .25s,color .25s;
+  }
+  .contact-links a:hover{border-color:var(--accent);color:var(--accent);}
+
+  footer{
+    padding:30px 5vw;display:flex;justify-content:space-between;
+    font-size:11px;color:var(--muted);letter-spacing:1px;border-top:1px solid var(--line);
+    flex-wrap:wrap;gap:10px;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:900px){
+    .grid{grid-template-columns:repeat(2,1fr);}
+    .about-wrap{grid-template-columns:1fr;}
+    nav{display:none;}
+    .menu-btn{display:flex;}
+  }
+  @media (max-width:560px){
+    .grid{grid-template-columns:1fr;}
+    header{padding:18px 5vw;}
+    section{padding:90px 6vw;}
+    .about-list{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">ARCH<span>T</span>.</div>
+  <div class="nav-inner">
+    <nav>
+      <ul>
+        <li><a href="#work" data-i18n="nav_work">Work</a></li>
+        <li><a href="#about" data-i18n="nav_about">About</a></li>
+        <li><a href="#contact" data-i18n="nav_contact">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="lang-toggle">
+      <button id="btn-en" class="active">EN</button>
+      <button id="btn-ko">KO</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-eyebrow" data-i18n="hero_eyebrow">Architecture &amp; Spatial Design</div>
+  <h1 data-i18n="hero_title">BUILDING<br><em>PORTFOLIO</em></h1>
+  <p data-i18n="hero_sub">Jane Doe — an architectural designer exploring the relationship between structure, light and human experience.</p>
+  <div class="scroll-cue"></div>
+</section>
+
+<section id="work">
+  <div class="section-head">
+    <h2 data-i18n="work_title">Selected Work</h2>
+    <div class="sub" data-i18n="work_sub">A collection of academic, competition and built projects from 2019–2026.</div>
+  </div>
+
+  <div class="filters">
+    <button class="active" data-filter="all" data-i18n="f_all">All</button>
+    <button data-filter="featured" data-i18n="f_featured">Featured</button>
+    <button data-filter="built" data-i18n="f_built">Built</button>
+    <button data-filter="competition" data-i18n="f_competition">Competition</button>
+    <button data-filter="academic" data-i18n="f_academic">Academic</button>
+  </div>
+
+  <div class="grid" id="grid">
+    <!-- cards injected by JS -->
+  </div>
+</section>
+
+<section id="about" class="about">
+  <div class="about-wrap">
+    <div class="about-photo"><span data-i18n="about_photo">Portrait</span></div>
+    <div class="about-text">
+      <h3 data-i18n="about_h">About</h3>
+      <p data-i18n="about_p1">I am an architectural designer based in Seoul, working across scales — from furniture to urban masterplans. My practice centers on how spatial structure shapes everyday experience, using research, competition work and built projects as parallel tracks of inquiry.</p>
+      <p data-i18n="about_p2">Previously trained in architectural design studios and currently developing independent research alongside collaborative practice.</p>
+      <div class="about-list">
+        <ul>
+          <h4 data-i18n="edu_h">Education</h4>
+          <li><span>M.Arch, University Name</span><span>2016–2018</span></li>
+          <li><span>B.Arch, University Name</span><span>2011–2016</span></li>
+        </ul>
+        <ul>
+          <h4 data-i18n="award_h">Awards</h4>
+          <li><span data-i18n="award1">Design Competition — 1st Prize</span><span>2024</span></li>
+          <li><span data-i18n="award2">Design Award — Honorable Mention</span><span>2022</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="contact">
+  <h2 data-i18n="contact_h">Let's Talk</h2>
+  <p data-i18n="contact_p">Open to collaborations, competitions and new opportunities.</p>
+  <div class="contact-links">
+    <a href="mailto:hello@example.com">hello@example.com</a>
+    <a href="#" target="_blank" rel="noopener">Instagram</a>
+    <a href="#" target="_blank" rel="noopener">LinkedIn</a>
+  </div>
+</section>
+
+<footer>
+  <div>© 2026 ARCHT. <span data-i18n="footer_rights">All rights reserved.</span></div>
+  <div data-i18n="footer_made">Built with care.</div>
+</footer>
+
+<script>
+/* ---------------- i18n ---------------- */
+const dict = {
+  en:{
+    nav_work:"Work", nav_about:"About", nav_contact:"Contact",
+    hero_eyebrow:"Architecture & Spatial Design",
+    hero_title:"BUILDING<br><em>PORTFOLIO</em>",
+    hero_sub:"Jane Doe — an architectural designer exploring the relationship between structure, light and human experience.",
+    work_title:"Selected Work",
+    work_sub:"A collection of academic, competition and built projects from 2019–2026.",
+    f_all:"All", f_featured:"Featured", f_built:"Built", f_competition:"Competition", f_academic:"Academic",
+    about_photo:"Portrait",
+    about_h:"About",
+    about_p1:"I am an architectural designer based in Seoul, working across scales — from furniture to urban masterplans. My practice centers on how spatial structure shapes everyday experience, using research, competition work and built projects as parallel tracks of inquiry.",
+    about_p2:"Previously trained in architectural design studios and currently developing independent research alongside collaborative practice.",
+    edu_h:"Education", award_h:"Awards",
+    award1:"Design Competition — 1st Prize", award2:"Design Award — Honorable Mention",
+    contact_h:"Let's Talk",
+    contact_p:"Open to collaborations, competitions and new opportunities.",
+    footer_rights:"All rights reserved.", footer_made:"Built with care."
+  },
+  ko:{
+    nav_work:"작업", nav_about:"소개", nav_contact:"연락처",
+    hero_eyebrow:"건축 & 공간 디자인",
+    hero_title:"BUILDING<br><em>PORTFOLIO</em>",
+    hero_sub:"홍길동 — 구조, 빛, 그리고 인간의 경험 사이의 관계를 탐구하는 건축 디자이너입니다.",
+    work_title:"선정 작업",
+    work_sub:"2019년부터 2026년까지의 연구, 현상설계, 준공 프로젝트 모음입니다.",
+    f_all:"전체", f_featured:"대표작", f_built:"준공작", f_competition:"현상설계", f_academic:"연구작",
+    about_photo:"프로필 사진",
+    about_h:"소개",
+    about_p1:"서울을 기반으로 활동하는 건축 디자이너로, 가구 단위부터 도시 마스터플랜까지 다양한 스케일을 다룹니다. 공간 구조가 일상의 경험을 어떻게 형성하는지에 집중하며, 연구·현상설계·준공 프로젝트를 병행하고 있습니다.",
+    about_p2:"건축 설계 스튜디오에서 훈련받았으며, 현재 협업과 독립 연구를 함께 진행하고 있습니다.",
+    edu_h:"학력", award_h:"수상",
+    award1:"디자인 공모전 — 1등상", award2:"디자인 어워드 — 특별상",
+    contact_h:"연락 주세요",
+    contact_p:"협업, 공모전 참여, 새로운 기회를 환영합니다.",
+    footer_rights:"모든 권리 보유.", footer_made:"정성껏 제작했습니다."
+  }
+};
+
+function setLang(lang){
+  document.documentElement.lang = lang;
+  document.documentElement.dataset.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(dict[lang][key] !== undefined) el.innerHTML = dict[lang][key];
+  });
+  document.getElementById('btn-en').classList.toggle('active', lang==='en');
+  document.getElementById('btn-ko').classList.toggle('active', lang==='ko');
+  document.querySelectorAll('.card').forEach(card=>{
+    const t = card.dataset['title_'+lang];
+    const d = card.dataset['desc_'+lang];
+    if(t) card.querySelector('.title').textContent = t;
+    if(d) card.querySelector('.desc').textContent = d;
+  });
+  try{ localStorage.setItem('site-lang', lang); }catch(e){}
+}
+document.getElementById('btn-en').addEventListener('click', ()=>setLang('en'));
+document.getElementById('btn-ko').addEventListener('click', ()=>setLang('ko'));
+
+/* ---------------- Project data ---------------- */
+const projects = [
+  {cat:'featured', year:'2026', initials:'RT', tag_en:'Featured', tag_ko:'대표작',
+   title_en:'Ripple Tower', title_ko:'리플 타워',
+   desc_en:'A high-rise residential tower organized around a rippling facade that modulates daylight.',
+   desc_ko:'파형 파사드를 통해 채광을 조절하는 고층 주거 타워 프로젝트.'},
+  {cat:'competition', year:'2025', initials:'UG', tag_en:'Competition · 5th Prize', tag_ko:'현상설계 · 5등상',
+   title_en:'Unfolded Ground', title_ko:'언폴디드 그라운드',
+   desc_en:'A park that unfolds across 365 days, wrapping an arena within the landscape.',
+   desc_ko:'365일 펼쳐지는 공원과 그 안에 감싸인 아레나를 제안한 공모작.'},
+  {cat:'built', year:'2025', initials:'SS', tag_en:'Built', tag_ko:'준공작',
+   title_en:'Tomorrow Scape', title_ko:'투모로우 스케이프',
+   desc_en:'An urban design pilot project approved under a municipal innovation program.',
+   desc_ko:'서울시 창의혁신디자인 사업으로 승인된 도시건축 프로젝트.'},
+  {cat:'featured', year:'2025', initials:'BC', tag_en:'Featured · Red Dot Winner', tag_ko:'대표작 · Red Dot 수상',
+   title_en:'Blooming Clouds', title_ko:'블루밍 클라우즈',
+   desc_en:'A cultural pavilion whose canopy forms echo cloud formations above the plaza.',
+   desc_ko:'광장 위 구름을 형상화한 캐노피 구조의 문화 파빌리온.'},
+  {cat:'academic', year:'2024', initials:'CS', tag_en:'Academic · Top 10', tag_ko:'연구작 · Top 10',
+   title_en:'Continuous Strata of Time', title_ko:'연속된 시간의 지층',
+   desc_en:'A research studio proposal reconciling historical strata within a dense urban site.',
+   desc_ko:'밀도 높은 도심 대지에서 역사적 지층을 재해석한 연구 프로젝트.'},
+  {cat:'built', year:'2024', initials:'GT', tag_en:'Built', tag_ko:'준공작',
+   title_en:'Gangbuk Triscape', title_ko:'강북삼경',
+   desc_en:'A mixed-use complex responding to three converging ridgelines north of the city.',
+   desc_ko:'도심 북측 세 능선이 만나는 대지에 응답한 복합 시설 프로젝트.'},
+  {cat:'built', year:'2024', initials:'FH', tag_en:'Built', tag_ko:'준공작',
+   title_en:'Floating Cross House', title_ko:'플로팅 크로스 하우스',
+   desc_en:'A single-family house organized around a cross-shaped void that floats above grade.',
+   desc_ko:'지면 위로 떠 있는 십자형 보이드를 중심으로 구성된 단독주택.'},
+  {cat:'competition', year:'2023', initials:'CG', tag_en:'Competition · 2nd Prize', tag_ko:'현상설계 · 2등상',
+   title_en:'Combinative Stellar City', title_ko:'컴비너티브 스텔라 시티',
+   desc_en:'A speculative masterplan combining orbital circulation with stacked civic programs.',
+   desc_ko:'궤도형 동선과 적층된 공공 프로그램을 결합한 실험적 마스터플랜.'},
+  {cat:'academic', year:'2013', initials:'FE', tag_en:'Academic · GSD Harvard', tag_ko:'연구작 · 하버드 GSD',
+   title_en:'Form of Energy', title_ko:'폼 오브 에너지',
+   desc_en:'A design studio investigation into energy-driven form generation.',
+   desc_ko:'에너지 흐름을 형태 생성의 동인으로 다룬 디자인 스튜디오 연구.'}
+];
+
+const grid = document.getElementById('grid');
+projects.forEach(p=>{
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.category = p.cat;
+  card.dataset['title_en'] = p.title_en;
+  card.dataset['title_ko'] = p.title_ko;
+  card.dataset['desc_en'] = p.desc_en;
+  card.dataset['desc_ko'] = p.desc_ko;
+  const catHue = {featured:38, built:200, competition:280, academic:150}[p.cat] || 38;
+  card.innerHTML = `
+    <div class="thumb" style="background:linear-gradient(150deg, hsl(${catHue} 30% 26%), hsl(${catHue+10} 25% 12%));">
+      <span>${p.initials}</span>
+    </div>
+    <div class="overlay">
+      <div class="tag">${document.documentElement.dataset.lang==='ko'?p.tag_ko:p.tag_en} · ${p.year}</div>
+      <div class="title">${p.title_en}</div>
+      <div class="meta">${p.year}</div>
+      <div class="desc">${p.desc_en}</div>
+    </div>
+  `;
+  grid.appendChild(card);
+});
+
+document.querySelectorAll('.filters button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const f = btn.dataset.filter;
+    document.querySelectorAll('.card').forEach(card=>{
+      card.classList.toggle('hide', f!=='all' && card.dataset.category!==f);
+    });
+  });
+});
+
+/* init language: saved preference, else default English */
+let initialLang = 'en';
+try{ initialLang = localStorage.getItem('site-lang') || 'en'; }catch(e){}
+setLang(initialLang);
+</script>
+
+</body>
+</html>

@@ -397,9 +397,26 @@
   </form>
 </div>
 
+<div class="modal-overlay" id="publish-overlay">
+  <form class="modal" id="publish-form">
+    <h3>GitHub에 게시</h3>
+    <p class="hint">GitHub 개인 액세스 토큰(repo 쓰기 권한)을 입력하면 지금 수정한 내용이 저장소에 바로 커밋되어, 잠시 후 실제 사이트에 반영됩니다. 토큰은 이 브라우저 탭이 열려있는 동안만 기억되고 저장소에는 절대 저장되지 않습니다.</p>
+    <p class="error" id="publish-error"></p>
+    <input type="text" id="publish-owner" placeholder="저장소 소유자 (owner)" value="G909G09">
+    <input type="text" id="publish-repo" placeholder="저장소 이름 (repo)" value="Portfolio">
+    <input type="text" id="publish-branch" placeholder="브랜치" value="main">
+    <input type="password" id="publish-token" placeholder="GitHub 개인 액세스 토큰 (ghp_...)" autocomplete="off">
+    <div class="row">
+      <button type="button" id="publish-cancel">취소</button>
+      <button type="submit" class="primary" id="publish-submit">게시하기</button>
+    </div>
+  </form>
+</div>
+
 <div class="admin-toolbar" id="admin-toolbar">
-  <div class="status">관리자 모드 — 편집한 내용은 이 브라우저에 자동 저장됩니다.</div>
+  <div class="status" id="admin-status">관리자 모드 — 편집한 내용은 이 브라우저에 자동 저장됩니다.</div>
   <div class="actions">
+    <button id="admin-publish">GitHub에 게시</button>
     <button id="admin-export">변경사항 내보내기</button>
     <button id="admin-reset">로컬 편집 초기화</button>
     <button id="admin-logout">로그아웃</button>
@@ -806,19 +823,119 @@ function mergedDict(){
   return out;
 }
 
+function buildUpdatedHtml(html){
+  html = replaceBetween(html, '/* === DICT_START === */', '/* === DICT_END === */',
+    '/* === DICT_START === */\nconst dict = ' + JSON.stringify(mergedDict(), null, 2) + ';\n/* === DICT_END === */');
+  html = replaceBetween(html, '/* === PROJECTS_START === */', '/* === PROJECTS_END === */',
+    '/* === PROJECTS_START === */\nconst projects = ' + JSON.stringify(projects, null, 2) + ';\n/* === PROJECTS_END === */');
+  html = replaceBetween(html, '/* === LINKS_START === */', '/* === LINKS_END === */',
+    '/* === LINKS_START === */\nlet contactLinksDefault = ' + JSON.stringify(contactLinks, null, 2) + ';\n/* === LINKS_END === */');
+  return html;
+}
+
 document.getElementById('admin-export').addEventListener('click', async ()=>{
   try{
     const res = await fetch(location.href, {cache:'no-store'});
-    let html = await res.text();
-    html = replaceBetween(html, '/* === DICT_START === */', '/* === DICT_END === */',
-      '/* === DICT_START === */\nconst dict = ' + JSON.stringify(mergedDict(), null, 2) + ';\n/* === DICT_END === */');
-    html = replaceBetween(html, '/* === PROJECTS_START === */', '/* === PROJECTS_END === */',
-      '/* === PROJECTS_START === */\nconst projects = ' + JSON.stringify(projects, null, 2) + ';\n/* === PROJECTS_END === */');
-    html = replaceBetween(html, '/* === LINKS_START === */', '/* === LINKS_END === */',
-      '/* === LINKS_START === */\nlet contactLinksDefault = ' + JSON.stringify(contactLinks, null, 2) + ';\n/* === LINKS_END === */');
+    const html = buildUpdatedHtml(await res.text());
     downloadFile('index.html', html);
   }catch(err){
     alert('내보내기에 실패했습니다: ' + err.message);
+  }
+});
+
+/* ---------------- GitHub direct publish ---------------- */
+const GH_SESSION_KEY = 'archt_gh_publish';
+
+function utf8ToBase64(str){
+  return btoa(new TextEncoder().encode(str).reduce((acc, byte)=> acc + String.fromCharCode(byte), ''));
+}
+function base64ToUtf8(b64){
+  const bin = atob(b64);
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
+const publishOverlay = document.getElementById('publish-overlay');
+const publishForm = document.getElementById('publish-form');
+const publishError = document.getElementById('publish-error');
+const publishSubmit = document.getElementById('publish-submit');
+const adminStatus = document.getElementById('admin-status');
+
+function openPublish(){
+  let stored = {};
+  try{ stored = JSON.parse(sessionStorage.getItem(GH_SESSION_KEY) || '{}'); }catch(e){}
+  if(stored.owner) document.getElementById('publish-owner').value = stored.owner;
+  if(stored.repo) document.getElementById('publish-repo').value = stored.repo;
+  if(stored.branch) document.getElementById('publish-branch').value = stored.branch;
+  if(stored.token) document.getElementById('publish-token').value = stored.token;
+  publishError.classList.remove('show');
+  publishOverlay.classList.add('open');
+}
+function closePublish(){ publishOverlay.classList.remove('open'); }
+
+document.getElementById('admin-publish').addEventListener('click', openPublish);
+document.getElementById('publish-cancel').addEventListener('click', closePublish);
+publishOverlay.addEventListener('click', (e)=>{ if(e.target === publishOverlay) closePublish(); });
+
+publishForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const owner = document.getElementById('publish-owner').value.trim();
+  const repo = document.getElementById('publish-repo').value.trim();
+  const branch = document.getElementById('publish-branch').value.trim() || 'main';
+  const token = document.getElementById('publish-token').value.trim();
+  publishError.classList.remove('show');
+
+  if(!owner || !repo || !token){
+    publishError.textContent = '저장소 소유자, 이름, 토큰을 모두 입력해주세요.';
+    publishError.classList.add('show');
+    return;
+  }
+
+  publishSubmit.disabled = true;
+  publishSubmit.textContent = '게시 중...';
+
+  try{
+    sessionStorage.setItem(GH_SESSION_KEY, JSON.stringify({owner, repo, branch, token}));
+
+    const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/index.html`;
+    const headers = {
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github+json'
+    };
+
+    const getRes = await fetch(`${apiBase}?ref=${encodeURIComponent(branch)}`, { headers });
+    if(!getRes.ok){
+      const body = await getRes.json().catch(()=>({}));
+      throw new Error(`파일을 불러오지 못했습니다 (${getRes.status}): ${body.message || getRes.statusText}`);
+    }
+    const fileData = await getRes.json();
+    const currentHtml = base64ToUtf8(fileData.content.replace(/\n/g, ''));
+    const updatedHtml = buildUpdatedHtml(currentHtml);
+
+    const putRes = await fetch(apiBase, {
+      method: 'PUT',
+      headers: Object.assign({'Content-Type':'application/json'}, headers),
+      body: JSON.stringify({
+        message: '관리자 페이지에서 콘텐츠 업데이트',
+        content: utf8ToBase64(updatedHtml),
+        sha: fileData.sha,
+        branch
+      })
+    });
+    if(!putRes.ok){
+      const body = await putRes.json().catch(()=>({}));
+      throw new Error(`게시에 실패했습니다 (${putRes.status}): ${body.message || putRes.statusText}`);
+    }
+
+    closePublish();
+    adminStatus.textContent = '✓ GitHub에 게시되었습니다. 잠시 후 사이트에 반영됩니다.';
+    setTimeout(()=>{ adminStatus.textContent = '관리자 모드 — 편집한 내용은 이 브라우저에 자동 저장됩니다.'; }, 6000);
+  }catch(err){
+    publishError.textContent = err.message;
+    publishError.classList.add('show');
+  }finally{
+    publishSubmit.disabled = false;
+    publishSubmit.textContent = '게시하기';
   }
 });
 
